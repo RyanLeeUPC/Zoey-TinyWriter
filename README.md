@@ -23,16 +23,17 @@ Everything is built from scratch, and short enough to read:
 | Byte-pair-encoding tokenizer | [`zoey/bpe.py`](zoey/bpe.py) |
 | GPT-style transformer (PyTorch) | [`zoey/models/gpt.py`](zoey/models/gpt.py) |
 | Training loop, with snapshots for the replay | [`zoey/train.py`](zoey/train.py), [`zoey/trace.py`](zoey/trace.py) |
+| Export to 8-bit browser weights, plus the Dictionary's word map | [`zoey/export.py`](zoey/export.py) |
 | The same transformer in TypeScript, running in your browser | [`viewer/src/engine/model.ts`](viewer/src/engine/model.ts) |
 | The viewer (React) | [`viewer/src`](viewer/src) |
 
 The browser engine is about 300 lines of plain TypeScript with no ML library. Tests check that it produces the same numbers as PyTorch.
 
-TinyWriter was trained on [TinyStories](https://arxiv.org/abs/2305.07759) (2.7M short stories, about 2 billion tokens in total) for 87 minutes on one RTX 4090. The weights are stored as 8-bit integers (a 28 MB download), which changes its accuracy by less than 0.05%.
+TinyWriter was trained on [TinyStories](https://arxiv.org/abs/2305.07759), 2.7M short stories (about 550M tokens), for 87 minutes on one RTX 4090. It read the whole collection about 3.6 times: 2 billion tokens in all. The weights are stored as 8-bit integers (a 28 MB download), which changes its accuracy by less than 0.05%.
 
 ## Run it yourself
 
-You need [uv](https://docs.astral.sh/uv/) (Python) and [Node.js](https://nodejs.org/) 20+.
+You need [uv](https://docs.astral.sh/uv/) (Python) and [Node.js](https://nodejs.org/) 22.12 or newer.
 
 ```bash
 # The viewer, with the bundled TinyWriter
@@ -55,8 +56,8 @@ Tests: `uv run pytest` (Python) and `npm test` in `viewer/` (browser engine vs P
 ## Project layout
 
 ```
-configs/        one TOML file per training run
-zoey/           Python: tokenizers, models, training, export
+configs/        the training configuration
+zoey/           Python: tokenizer, model, training, export
 viewer/         the React app
   src/engine/     the in-browser transformer, tokenizer, and worker
   src/explore/    the Explore page (story + inspector)
@@ -65,6 +66,7 @@ viewer/         the React app
   public/runs/    recorded training snapshots
 tokenizers/     trained tokenizers
 tests/          Python tests
+.github/        deploys the viewer to GitHub Pages on every push to main
 ```
 
 The training snapshots that the replay page reads are written by [`zoey/trace.py`](zoey/trace.py); their format is defined by the types in [`viewer/src/lib/types.ts`](viewer/src/lib/types.ts).
@@ -76,7 +78,7 @@ Zoey-TinyWriter builds on great work by others. If you like it, go check these o
 - Andrej Karpathy's [nanoGPT](https://github.com/karpathy/nanoGPT), [minbpe](https://github.com/karpathy/minbpe), and the *Let's build GPT* video
 - Sebastian Raschka's [*Build a Large Language Model (From Scratch)*](https://github.com/rasbt/LLMs-from-scratch)
 - [Transformer Explainer](https://poloclub.github.io/transformer-explainer/) (Georgia Tech Polo Club) and Brendan Bycroft's [LLM Visualization](https://bbycroft.net/llm)
-- [TransformerLens](https://github.com/TransformerLensOrg/TransformerLens) and Anthropic's [Transformer Circuits](https://transformer-circuits.pub/) work on induction heads
+- [TransformerLens](https://github.com/TransformerLensOrg/TransformerLens) and Anthropic's [Transformer Circuits](https://transformer-circuits.pub/) research on what happens inside transformers
 - The [TinyStories](https://arxiv.org/abs/2305.07759) dataset by Ronen Eldan & Yuanzhi Li
 
 ## License
