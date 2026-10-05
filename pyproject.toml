@@ -1,0 +1,35 @@
+[project]
+name = "zoey-tinywriter"
+version = "0.1.0"
+description = "A glass-box mini LLM: build it, train it, and watch it learn."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0",
+    "scikit-learn>=1.9.1",
+    "torch>=2.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["zoey"]
+
+# On Windows, the default PyPI torch wheel is CPU-only, so we pull the CUDA
+# build from PyTorch's own index. Linux PyPI wheels already include CUDA, and
+# macOS uses Apple's MPS backend, so they use the default index.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128", marker = "sys_platform == 'win32'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+*.pyc
+.venv/
+
+# Downloaded datasets and training outputs (regenerate with the scripts)
+data/
+checkpoints/
+
+# Viewer
+viewer/node_modules/
+viewer/dist/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# TypeScript build cache
+*.tsbuildinfo

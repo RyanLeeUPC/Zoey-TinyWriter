@@ -1,0 +1,41 @@
+# TinyWriter: the model you explore in the viewer (27.5M parameters).
+# Train with:  uv run python -m zoey.train configs/zoey.toml
+# Takes about 1 h 40 min on an RTX 4090.
+
+[run]
+id = "zoey"
+title = "How TinyWriter learned"
+description = "Replay TinyWriter's whole training run, from random word salad to real stories. Press play, or drag the timeline."
+seed = 1337
+
+[data]
+size = "full"            # all ~2.7M TinyStories
+tokenizer = "bpe-4096"   # train it first: uv run python -m zoey.bpe
+
+[model]
+name = "gpt"
+block_size = 512         # tokens of context
+n_layer = 8
+n_head = 8
+d_model = 512
+dropout = 0.0            # plenty of data, so no need for dropout
+
+[train]
+batch_size = 64          # 64 x 512 = 32,768 tokens per step
+max_steps = 61000        # ~2B tokens, ~3.6 passes over the training set
+learning_rate = 8e-4
+warmup_steps = 1000
+min_lr_ratio = 0.1
+weight_decay = 0.1
+grad_clip = 1.0
+eval_iters = 50
+log_interval = 10
+save_every = 2000
+
+[trace]
+checkpoints = 64
+# "Lily" and "red ball" repeat on purpose: copying them needs attention to look back.
+probe = "Once upon a time, there was a little girl named Lily. She loved to play with her red ball. One day, Lily lost her red ball in the park."
+prompts = ["Once upon a time", "The dog was", "Lily said, \""]
+sample_tokens = 160
+temperature = 0.8

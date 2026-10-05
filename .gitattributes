@@ -1,0 +1,7 @@
+# Consistent line endings for everyone who clones the repo.
+* text=auto eol=lf
+
+# Model weights and other binaries: never touch their bytes.
+*.bin binary
+*.pt binary
+*.png binary
