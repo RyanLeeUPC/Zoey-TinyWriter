@@ -15,7 +15,7 @@ Samples use the SAME random seed at every snapshot. That way, when the text
 changes between snapshots, it's because the model changed - not because the
 dice rolled differently.
 
-The format is documented in docs/trace-format.md.
+The format is described by the types in viewer/src/lib/types.ts.
 """
 
 from __future__ import annotations

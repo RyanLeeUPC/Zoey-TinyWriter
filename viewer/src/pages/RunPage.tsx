@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, BookOpen, Lightbulb } from "lucide-react";
+import { ArrowLeft, Lightbulb } from "lucide-react";
 import { useRun, type LoadedRun } from "../lib/data";
-import { chapterForRun } from "../content/chapters";
 import { Timeline } from "../components/Timeline";
 import { SamplesPanel } from "../views/SamplesPanel";
 import { ProbePanel } from "../views/ProbePanel";
@@ -43,7 +42,6 @@ export function RunPage() {
 function Lab({ run }: { run: LoadedRun }) {
   const { manifest, snapshots, loaded } = run;
   const last = snapshots.length - 1;
-  const chapter = chapterForRun(manifest.id);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
@@ -101,24 +99,9 @@ function Lab({ run }: { run: LoadedRun }) {
         <Link to="/" className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink">
           <ArrowLeft size={15} /> Back to TinyWriter
         </Link>
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            {manifest.chapter !== undefined && (
-              <div className="text-sm font-semibold uppercase tracking-wide text-accent-ink">Chapter {manifest.chapter}</div>
-            )}
-            <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{manifest.title}</h1>
-            {(chapter?.tagline ?? manifest.description) && (
-              <p className="mt-2 max-w-2xl text-lg text-ink-2">{chapter?.tagline ?? manifest.description}</p>
-            )}
-          </div>
-          {chapter && (
-            <a
-              href={chapter.doc}
-              className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-2"
-            >
-              <BookOpen size={16} /> Read the chapter
-            </a>
-          )}
+        <div className="mt-3">
+          <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{manifest.title}</h1>
+          {manifest.description && <p className="mt-2 max-w-2xl text-lg text-ink-2">{manifest.description}</p>}
         </div>
         <RunFacts run={run} />
         {loaded < snapshots.length && (

@@ -63,12 +63,11 @@ viewer/         the React app
   src/dictionary/ the Dictionary page (embeddings, similar words, word map)
   public/models/  exported model weights
   public/runs/    recorded training snapshots
-docs/           write-ups (work in progress)
 tokenizers/     trained tokenizers
 tests/          Python tests
 ```
 
-The format of the training snapshots is described in [docs/trace-format.md](docs/trace-format.md).
+The training snapshots that the replay page reads are written by [`zoey/trace.py`](zoey/trace.py); their format is defined by the types in [`viewer/src/lib/types.ts`](viewer/src/lib/types.ts).
 
 ## Credits and prior work
 

@@ -1,4 +1,5 @@
-// The trace format written by zoey/trace.py. Documented in docs/trace-format.md.
+// The trace format written by zoey/trace.py: training snapshots for the replay page.
+// These types are the reference for its shape; change both sides together.
 
 export interface LossPoint {
   step: number;
