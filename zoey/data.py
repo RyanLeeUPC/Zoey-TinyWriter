@@ -31,7 +31,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 HF = "https://huggingface.co/datasets/roneneldan"
 TINYSTORIES_FILES = {
-    # ~22 MB. Plenty for the bigram chapter.
+    # ~22 MB. Used to check the model on stories it never trained on.
     "small": f"{HF}/TinyStories/resolve/main/TinyStoriesV2-GPT4-valid.txt",
     # ~2.2 GB, ~2.7M stories. What the real TinyWriter learns from.
     "full": f"{HF}/TinyStories/resolve/main/TinyStoriesV2-GPT4-train.txt",

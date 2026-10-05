@@ -1,7 +1,7 @@
 """
 The training loop - the same for every model in Zoey-TinyWriter.
 
-    python -m zoey.train configs/01-bigram.toml
+    python -m zoey.train configs/zoey.toml
 
 Training is a loop of four steps, repeated thousands of times:
 
@@ -26,7 +26,6 @@ from pathlib import Path
 import torch
 
 from .bpe import BPETokenizer
-from .char_tokenizer import CharTokenizer
 from .data import build_stream
 from .models import build_model
 from .trace import TraceWriter, checkpoint_schedule
@@ -35,7 +34,7 @@ CHECKPOINT_DIR = Path(__file__).resolve().parent.parent / "checkpoints"
 
 
 def load_tokenizer(name: str):
-    return CharTokenizer() if name == "char" else BPETokenizer.load(name)
+    return BPETokenizer.load(name)
 
 
 def pick_device() -> str:

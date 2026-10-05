@@ -8,7 +8,7 @@ back as a time-lapse.
 Each snapshot answers three questions:
 
   1. What does TinyWriter write right now?        -> samples
-  2. What does TinyWriter predict, letter by letter, for a fixed sentence?  -> probe
+  2. What does TinyWriter predict, token by token, for a fixed sentence?  -> probe
   3. What do TinyWriter's insides look like?      -> views (model-specific)
 
 Samples use the SAME random seed at every snapshot. That way, when the text

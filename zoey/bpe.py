@@ -1,8 +1,8 @@
 """
-Chapter 2: Byte-pair encoding (BPE) - the tokenizer real LLMs use.
+Byte-pair encoding (BPE) - the tokenizer real LLMs use.
 
-The character tokenizer from chapter 1 makes the model spell everything out
-letter by letter. BPE fixes that by *learning* a vocabulary of useful chunks.
+Reading text one letter at a time would make the model spell everything out.
+BPE instead *learns* a vocabulary of useful chunks.
 
 The idea is beautifully simple:
 

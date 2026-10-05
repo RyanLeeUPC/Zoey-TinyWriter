@@ -4,7 +4,7 @@ import { ConfidenceLegend } from "../components/ConfidenceLegend";
 import type { Manifest, Snapshot } from "../lib/types";
 import { useTheme } from "../lib/theme";
 import { bandColor, underline } from "../lib/colors";
-import { nameToken, pct, unitOf } from "../lib/format";
+import { nameToken, pct } from "../lib/format";
 
 export function SamplesPanel({ manifest, snap }: { manifest: Manifest; snap: Snapshot }) {
   const { theme } = useTheme();
@@ -12,12 +12,11 @@ export function SamplesPanel({ manifest, snap }: { manifest: Manifest; snap: Sna
   const [mode, setMode] = useState<"plain" | "confidence">("plain");
   const sample = snap.samples[which];
   const tokens = manifest.tokenizer.tokens;
-  const unit = unitOf(manifest.tokenizer.name);
 
   return (
     <Panel
       title="What TinyWriter writes"
-      subtitle={`We give TinyWriter the start of a story and let it continue, one ${unit.one} at a time.`}
+      subtitle={`We give TinyWriter the start of a story and let it continue, one token at a time.`}
       actions={
         <Segmented
           value={mode}
@@ -32,14 +31,14 @@ export function SamplesPanel({ manifest, snap }: { manifest: Manifest; snap: Sna
         <>
           <p>
             The <b>highlighted text</b> at the start is the prompt we typed in. Everything after it was written by TinyWriter, picking each
-            {unit.one} randomly according to the probabilities it has learned.
+            token randomly according to the probabilities it has learned.
           </p>
           <p>
             We use the <b>same random dice rolls</b> at every point in training, so when the text changes as you move
             the timeline, it's because TinyWriter changed, not luck.
           </p>
           <p>
-            Switch to <b>Confidence</b> to underline each {unit.one} by how likely TinyWriter thought it was, using the
+            Switch to <b>Confidence</b> to underline each token by how likely TinyWriter thought it was, using the
             same four bands as the rest of the site: from pale (a long shot) to dark (confident).
           </p>
         </>

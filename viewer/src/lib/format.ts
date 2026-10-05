@@ -31,10 +31,3 @@ export function compact(n: number): string {
 export function int(n: number): string {
   return n.toLocaleString("en-US");
 }
-
-/** "letter" for the character tokenizer, "token" for everything else. */
-export function unitOf(tokenizerName: string) {
-  return tokenizerName === "char"
-    ? { one: "letter", many: "letters", vocab: "characters" }
-    : { one: "token", many: "tokens", vocab: "tokens" };
-}

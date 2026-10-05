@@ -5,9 +5,8 @@ import { useRun, type LoadedRun } from "../lib/data";
 import { Timeline } from "../components/Timeline";
 import { SamplesPanel } from "../views/SamplesPanel";
 import { ProbePanel } from "../views/ProbePanel";
-import { BigramPanel } from "../views/BigramPanel";
 import { LossPanel } from "../views/LossPanel";
-import { compact, int, unitOf } from "../lib/format";
+import { compact, int } from "../lib/format";
 
 const FRAME_MS = 450;
 
@@ -134,8 +133,7 @@ function Lab({ run }: { run: LoadedRun }) {
 
       <div className="mt-5 grid gap-5">
         <SamplesPanel manifest={manifest} snap={snap} />
-        <ProbePanel manifest={manifest} snap={snap} contextSize={manifest.model.name === "bigram" ? 1 : undefined} />
-        {snap.views.bigram && <BigramPanel manifest={manifest} snap={snap} />}
+        <ProbePanel manifest={manifest} snap={snap} />
         <LossPanel manifest={manifest} step={step} />
       </div>
     </div>
@@ -144,12 +142,11 @@ function Lab({ run }: { run: LoadedRun }) {
 
 function RunFacts({ run }: { run: LoadedRun }) {
   const { manifest } = run;
-  const unit = unitOf(manifest.tokenizer.name);
   const facts = [
     { label: "Parameters", value: int(manifest.model.params) },
-    { label: "Vocabulary", value: `${int(manifest.tokenizer.tokens.length)} ${unit.vocab}` },
+    { label: "Vocabulary", value: `${int(manifest.tokenizer.tokens.length)} tokens` },
     { label: "Training steps", value: int(manifest.train.max_steps) },
-    { label: `${unit.many[0].toUpperCase()}${unit.many.slice(1)} read`, value: compact(manifest.train.max_steps * manifest.train.tokens_per_step) },
+    { label: "Tokens read", value: compact(manifest.train.max_steps * manifest.train.tokens_per_step) },
     manifest.train.seconds !== undefined && {
       label: "Training time",
       value: `${duration(manifest.train.seconds)} on ${manifest.train.device === "cuda" ? "a GPU" : manifest.train.device}`,

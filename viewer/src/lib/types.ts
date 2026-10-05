@@ -17,7 +17,6 @@ export interface Manifest {
   schema: number;
   id: string;
   title: string;
-  chapter?: number;
   description?: string;
   model: { name: string; config: Record<string, unknown>; params: number };
   train: {
@@ -54,7 +53,6 @@ export interface Snapshot {
   samples: Sample[];
   probe: Probe;
   views: {
-    bigram?: number[][];
     attention?: number[][][][];
     lens_top_ids?: number[][][];
     lens_top_probs?: number[][][];

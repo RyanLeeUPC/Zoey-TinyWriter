@@ -1,10 +1,8 @@
 """Every model in Zoey-TinyWriter, by the name used in config files."""
 
-from .bigram import BigramConfig, BigramModel
 from .gpt import GPT, GPTConfig
 
 MODELS = {
-    "bigram": (BigramModel, BigramConfig),
     "gpt": (GPT, GPTConfig),
 }
 

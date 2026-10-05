@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Panel } from "../components/Panel";
 import type { Manifest } from "../lib/types";
-import { int, unitOf } from "../lib/format";
+import { int } from "../lib/format";
 
 const W = 720;
 const H = 260;
@@ -16,7 +16,6 @@ export function LossPanel({ manifest, step }: { manifest: Manifest; step: number
   const [hoverStep, setHoverStep] = useState<number | null>(null);
 
   const vocab = manifest.tokenizer.tokens.length;
-  const unit = unitOf(manifest.tokenizer.name);
   const randomLoss = Math.log(vocab);
   const train = manifest.loss;
   const val = manifest.checkpoints;
@@ -58,21 +57,18 @@ export function LossPanel({ manifest, step }: { manifest: Manifest; step: number
       help={
         <>
           <p>
-            <b>Loss</b> measures how surprised TinyWriter is, on average, by the real next {unit.one}. If TinyWriter gives the right
-            {unit.one} 100% probability, loss is 0. The less probability it gave, the higher the loss.
+            <b>Loss</b> measures how surprised TinyWriter is, on average, by the real next token. If TinyWriter gives the right
+            token 100% probability, loss is 0. The less probability it gave, the higher the loss.
           </p>
           <p>
-            The dashed line is <b>random guessing</b>: picking uniformly from all {int(vocab)} {unit.vocab} gives a loss of
+            The dashed line is <b>random guessing</b>: picking uniformly from all {int(vocab)} tokens gives a loss of
             ln({vocab}) ≈ {randomLoss.toFixed(2)}. TinyWriter actually starts <i>worse</i> than that, because its random
             starting table is confidently wrong in random directions.
           </p>
           <p>
             <b>Training loss</b> is measured on text TinyWriter learns from; <b>validation loss</b> on text it never sees.
             When they stay together, TinyWriter is learning general patterns rather than memorizing. When the curve goes
-            flat, the model has learned all it <i>can</i>
-            {manifest.model.name === "bigram"
-              ? ". For a bigram model, that's about 2.3. Beating it needs a model that can see more than one letter back."
-              : " at this size."}
+            flat, the model has learned all it <i>can</i> at this size.
           </p>
         </>
       }

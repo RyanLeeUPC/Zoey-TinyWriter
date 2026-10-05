@@ -5,59 +5,48 @@ import { ConfidenceLegend } from "../components/ConfidenceLegend";
 import type { Manifest, Snapshot } from "../lib/types";
 import { useTheme } from "../lib/theme";
 import { bandColor, underline } from "../lib/colors";
-import { nameToken, pct, showToken, unitOf } from "../lib/format";
+import { nameToken, pct, showToken } from "../lib/format";
 
 /**
- * A fixed test sentence. For every letter we show how much probability TinyWriter
- * gave to it before seeing it. Click a letter to see TinyWriter's full set of guesses.
+ * A fixed test sentence. For every token we show how much probability
+ * TinyWriter gave it before seeing it. Click a token to see the full set of guesses.
  */
 export function ProbePanel({
   manifest,
   snap,
-  contextSize,
 }: {
   manifest: Manifest;
   snap: Snapshot;
-  /** How many previous tokens the model can actually see (1 for bigram). */
-  contextSize?: number;
 }) {
   const { theme } = useTheme();
   const tokens = manifest.tokenizer.tokens;
   const ids = manifest.probe.ids;
-  const unit = unitOf(manifest.tokenizer.name);
-  const [sel, setSel] = useState(() => initialSelection(ids, tokens, manifest.tokenizer.name));
+  const [sel, setSel] = useState(() => initialSelection(ids, tokens));
 
   const pos = sel - 1; // the prediction made after reading tokens [0..pos]
   const target = ids[sel];
   const p = snap.probe.target_probs[pos];
-  const seenFrom = contextSize ? Math.max(0, sel - contextSize) : 0;
 
   return (
     <Panel
-      title={`Guess the next ${unit.one}`}
+      title={`Guess the next token`}
       subtitle={
         <>
-          A test sentence TinyWriter never trained on. Each {unit.one} is underlined by how strongly TinyWriter predicted it.{" "}
-          <b className="text-ink">Click any {unit.one}.</b>
+          A test sentence TinyWriter never trained on. Each token is underlined by how strongly TinyWriter predicted it.{" "}
+          <b className="text-ink">Click any token.</b>
         </>
       }
       help={
         <>
           <p>
-            Before each {unit.one}, we ask TinyWriter: <b>"what comes next?"</b> TinyWriter answers with a probability for every
-            possible {unit.one}. The underline under each {unit.one} shows how much probability TinyWriter gave to the {unit.one} that{" "}
+            Before each token, we ask TinyWriter: <b>"what comes next?"</b> TinyWriter answers with a probability for every
+            possible token. The underline under each token shows how much probability TinyWriter gave to the token that{" "}
             <i>actually</i> came next.
           </p>
           <p>
-            This is exactly what the <b>loss</b> measures. Loss is the average "surprise" across {unit.many} like these:
+            This is exactly what the <b>loss</b> measures. Loss is the average "surprise" across tokens like these:
             a confident correct guess costs almost nothing, a confident wrong guess costs a lot.
           </p>
-          {contextSize === 1 && (
-            <p>
-              Notice that a bigram model only ever looks at <b>one letter</b>: the one right before. After "t" it
-              guesses "h" whether we're in "the", "time", or "little". It has no idea what word it's in.
-            </p>
-          )}
         </>
       }
     >
@@ -76,7 +65,7 @@ export function ProbePanel({
                   aria-selected={active}
                   disabled={i === 0}
                   onClick={() => setSel(i)}
-                  title={tp === null ? `First ${unit.one}: nothing to predict from` : `${pct(tp)} chance of ${nameToken(tokens[id])}`}
+                  title={tp === null ? `First token: nothing to predict from` : `${pct(tp)} chance of ${nameToken(tokens[id])}`}
                   className={`h-10 min-w-[1.35rem] whitespace-pre rounded-[4px] px-0.5 transition-colors ${
                     active ? "relative z-10 bg-ink text-page" : ""
                   } ${tp === null ? "text-muted" : "cursor-pointer hover:bg-surface-2"}`}
@@ -97,21 +86,15 @@ export function ProbePanel({
             {ids.slice(0, sel).map((id, i) => (
               <span
                 key={i}
-                className={i >= seenFrom ? "rounded-[3px] bg-accent-wash font-bold text-accent-ink" : "text-muted"}
+                className="rounded-[3px] bg-accent-wash font-bold text-accent-ink"
               >
                 {tokens[id]}
               </span>
             ))}
             <span className="ml-0.5 inline-block h-5 w-0.5 translate-y-1 animate-pulse bg-ink" />
           </div>
-          {contextSize && (
-            <p className="mt-2 text-sm text-ink-2">
-              <span className="rounded-[3px] bg-accent-wash px-1 font-bold text-accent-ink">Highlighted</span> = what
-              the model can actually see. {contextSize === 1 ? "A bigram model sees just one letter." : null}
-            </p>
-          )}
           <p className="mt-3 text-sm text-ink-2">
-            The real next {unit.one} was <b className="font-mono text-ink">{showToken(tokens[target])}</b>. TinyWriter gave it{" "}
+            The real next token was <b className="font-mono text-ink">{showToken(tokens[target])}</b>. TinyWriter gave it{" "}
             <b className="tabular text-ink">{pct(p)}</b>.
           </p>
         </div>
@@ -139,13 +122,9 @@ function words(ids: number[], tokens: string[]): number[][] {
   return out.filter((w) => w.length);
 }
 
-/** Start on an instructive spot: the "i" in "time" for letters, the second "Lily" for tokens. */
-function initialSelection(ids: number[], tokens: string[], tokenizer: string): number {
+/** Start on an instructive spot: the second "Lily", which has to be copied from earlier. */
+function initialSelection(ids: number[], tokens: string[]): number {
   const text = ids.map((id) => tokens[id]);
-  if (tokenizer === "char") {
-    const at = text.join("").indexOf("time");
-    return at >= 0 ? at + 1 : 1;
-  }
   const lily = text.map((t, i) => (t.trim() === "Lily" ? i : -1)).filter((i) => i > 0);
   return lily[1] ?? lily[0] ?? 1;
 }

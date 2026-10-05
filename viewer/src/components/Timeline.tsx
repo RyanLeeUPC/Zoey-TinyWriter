@@ -1,6 +1,6 @@
 import { Pause, Play, RotateCcw, SkipBack, SkipForward } from "lucide-react";
 import type { Manifest } from "../lib/types";
-import { compact, int, unitOf } from "../lib/format";
+import { compact, int } from "../lib/format";
 
 /**
  * The time machine. Drag through training, or press play to watch TinyWriter learn.
@@ -27,7 +27,6 @@ export function Timeline({
   const last = cps.length - 1;
   const atEnd = index === last;
   const tokensRead = cp.step * manifest.train.tokens_per_step;
-  const unit = unitOf(manifest.tokenizer.name);
 
   return (
     <div className="sticky top-0 z-20 -mx-4 border-b border-line bg-page/85 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
@@ -55,7 +54,7 @@ export function Timeline({
           <div className="tabular text-xl font-semibold">
             {int(cp.step)} <span className="text-sm font-normal text-muted">/ {int(manifest.train.max_steps)}</span>
           </div>
-          <div className="tabular text-xs text-ink-2">{compact(tokensRead)} {unit.many} read</div>
+          <div className="tabular text-xs text-ink-2">{compact(tokensRead)} tokens read</div>
         </div>
 
         <div className="relative h-14 min-w-0 flex-1">

@@ -1,8 +1,8 @@
 """
 The real thing: a GPT-style transformer.
 
-The bigram model could only see one token back. A transformer can look at
-*every* earlier token and decide which ones matter. Here's the whole flow
+A transformer can look at *every* earlier token and decide which ones
+matter. Here's the whole flow
 for one forward pass:
 
     token ids            [ Once, upon, a, time ]
