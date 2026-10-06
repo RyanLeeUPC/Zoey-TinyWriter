@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Cpu, Lightbulb, Play } from "lucide-react";
 import { useZoey, zoey } from "../engine/client";
@@ -16,20 +16,39 @@ import { MODEL_ID } from "../config";
 // A seed that gives a nice first story for the default prompt.
 const FIRST_SEED = 7;
 
+/*
+  The story lives in the model's store for the whole visit, so the page's own
+  choices (prompt, settings, which word is selected) live outside the page too.
+  Visit the Dictionary, come back, and everything is where you left it.
+*/
+const sticky = new Map<string, unknown>();
+function useSticky<T>(key: string, initial: T): [T, (value: T) => void] {
+  const [value, setValue] = useState<T>(() => (sticky.has(key) ? (sticky.get(key) as T) : initial));
+  const set = useCallback(
+    (v: T) => {
+      sticky.set(key, v);
+      setValue(v);
+    },
+    [key],
+  );
+  return [value, set];
+}
+let welcomed = false; // has the first story been written this visit?
+let lastPickedRun = 0; // which story the inspector was last auto-opened on
+
 export function Explore() {
   const z = useZoey();
-  const [prompt, setPrompt] = useState(STARTERS[0]);
-  const [temperature, setTemperature] = useState(0.7);
-  const [length, setLength] = useState<Length>("medium");
-  const [seed, setSeed] = useState(FIRST_SEED);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [head, setHead] = useState<HeadChoice>("all");
-  const [touched, setTouched] = useState(false); // has the person clicked anything yet?
-  const [findsName, setFindsName] = useState(false); // does the auto-picked head look at a name?
-  const [pickTarget, setPickTarget] = useState<number | null>(null); // the word the auto-picked head looks at
-  const [mode, setMode] = useState<"attention" | "confidence">("attention");
+  const [prompt, setPrompt] = useSticky("prompt", STARTERS[0]);
+  const [temperature, setTemperature] = useSticky("temperature", 0.7);
+  const [length, setLength] = useSticky<Length>("length", "medium");
+  const [seed, setSeed] = useSticky("seed", FIRST_SEED);
+  const [selected, setSelected] = useSticky<number | null>("selected", null);
+  const [head, setHead] = useSticky<HeadChoice>("head", "all");
+  const [touched, setTouched] = useSticky("touched", false); // has the person clicked anything yet?
+  const [findsName, setFindsName] = useSticky("findsName", false); // does the auto-picked head look at a name?
+  const [pickTarget, setPickTarget] = useSticky<number | null>("pickTarget", null); // the word that head looks at
+  const [mode, setMode] = useSticky<"attention" | "confidence">("mode", "attention");
   const [hoverTarget, setHoverTarget] = useState<number | null>(null);
-  const started = useRef(false);
   const { theme } = useTheme();
 
   const shape = z.info ? { layers: z.info.config.n_layer, heads: z.info.config.n_head } : { layers: 1, heads: 1 };
@@ -46,18 +65,17 @@ export function Explore() {
 
   // Write a first story as soon as the model is ready, so there's something to look at.
   useEffect(() => {
-    if (z.status === "ready" && !started.current) {
-      started.current = true;
+    if (z.status === "ready" && !welcomed) {
+      welcomed = true;
       write(FIRST_SEED);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [z.status]);
 
   // When a story finishes, open the inspector on an interesting token.
-  const lastRun = useRef(0);
   useEffect(() => {
-    if (z.status !== "ready" || !z.tokens.length || lastRun.current === z.run) return;
-    lastRun.current = z.run;
+    if (z.status !== "ready" || !z.tokens.length || lastPickedRun === z.run) return;
+    lastPickedRun = z.run;
     const pick = autoPick(z.tokens, shape);
     if (pick) {
       // Open on the colored overview of all heads; the hint names the word the
@@ -177,6 +195,13 @@ export function Explore() {
             onReroll={() => write(Math.floor(Math.random() * 1e9))}
             onStop={() => zoey.stop()}
           />
+
+          {z.trimmed > 0 && (
+            <p className="mt-3 rounded-xl bg-surface-2 px-4 py-2 text-sm text-ink-2">
+              Your start was too long to fit along with the story, so TinyWriter read only its last part (the first{" "}
+              {z.trimmed} tokens were left out).
+            </p>
+          )}
 
           {!touched && selected !== null && !busy && map && (
             <Hint tokens={z.tokens} selected={selected} map={map} target={pickTarget} vocab={z.vocab} findsName={findsName} />

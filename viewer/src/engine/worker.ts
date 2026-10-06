@@ -68,7 +68,12 @@ async function generate(run: number, opts: GenerateOptions) {
 
   // Every story in the training data starts right after an end-of-text
   // marker, so we start with one too: it tells TinyWriter "a new story begins".
-  const prompt = tokenizer.encode(opts.prompt).slice(0, block_size - 1 - opts.maxTokens);
+  // A prompt too long to fit (with room left to write) keeps its *end*: that's
+  // what the story continues from.
+  const encoded = tokenizer.encode(opts.prompt);
+  const room = block_size - 1 - opts.maxTokens;
+  const prompt = encoded.length > room ? encoded.slice(encoded.length - room) : encoded;
+  if (prompt.length < encoded.length) post({ type: "trimmed", run, dropped: encoded.length - prompt.length });
   const tokens = [tokenizer.eotId, ...prompt];
   const session = model.newSession();
   story = { run, residuals: [], next: [] };
@@ -76,7 +81,11 @@ async function generate(run: number, opts: GenerateOptions) {
   let reason: "length" | "end" | "stopped" | "full" = "length";
 
   for (let pos = 0; pos < tokens.length; pos++) {
-    if (run !== currentRun) return post({ type: "done", run, reason: "stopped" });
+    if (run !== currentRun) {
+      // Stopped: the token picked last time around was never written, so forget it.
+      story.next[pos - 1] = undefined;
+      return post({ type: "done", run, reason: "stopped" });
+    }
 
     const out = session.step(tokens[pos]);
     const probs = softmax(out.logits);

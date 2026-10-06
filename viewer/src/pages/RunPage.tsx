@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, Lightbulb } from "lucide-react";
 import { useRun, type LoadedRun } from "../lib/data";
@@ -52,6 +52,10 @@ function Lab({ run }: { run: LoadedRun }) {
 
   // Advance one snapshot per frame while playing (waiting for downloads if
   // playback catches up with them); stop at the end.
+  // (The latest snapshots are read through a ref: snapshots keep arriving while
+  // playing, and restarting the timer on each arrival would stall playback.)
+  const snapshotsRef = useRef(snapshots);
+  snapshotsRef.current = snapshots;
   useEffect(() => {
     if (!playing) return;
     const t = setInterval(() => {
@@ -60,11 +64,11 @@ function Lab({ run }: { run: LoadedRun }) {
           setPlaying(false);
           return i;
         }
-        return snapshots[i + 1] ? i + 1 : i;
+        return snapshotsRef.current[i + 1] ? i + 1 : i;
       });
     }, FRAME_MS);
     return () => clearInterval(t);
-  }, [playing, last, snapshots]);
+  }, [playing, last]);
 
   // Keyboard: space = play/pause, arrows = step.
   useEffect(() => {

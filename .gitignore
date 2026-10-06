@@ -13,8 +13,9 @@ checkpoints/
 viewer/node_modules/
 viewer/dist/
 
-# Editors / OS
+# Editors / OS / local tool config
 .vscode/
+.claude/
 .idea/
 .DS_Store
 Thumbs.db

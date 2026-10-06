@@ -19,6 +19,8 @@ export interface ZoeyState {
   tokens: TokenTrace[];
   /** Layer-by-layer views computed so far, by position. */
   lens: Map<number, Lens>;
+  /** How many tokens were cut from the start of an over-long prompt (0 if none). */
+  trimmed: number;
   /** Dictionary lookups so far, by token id. */
   tokenInfo: Map<number, TokenInfo>;
   /** Increments with every new story, so views can reset their selection. */
@@ -27,7 +29,7 @@ export interface ZoeyState {
 
 const MODEL_URL = `./models/${MODEL_ID}`;
 
-let state: ZoeyState = { status: "idle", progress: 0, vocab: [], tokens: [], lens: new Map(), tokenInfo: new Map(), run: 0 };
+let state: ZoeyState = { status: "idle", progress: 0, vocab: [], tokens: [], lens: new Map(), tokenInfo: new Map(), trimmed: 0, run: 0 };
 const lensRequested = new Set<number>();
 const tokenRequested = new Set<number>();
 const listeners = new Set<() => void>();
@@ -76,11 +78,21 @@ function onEvent(e: MessageEvent<WorkerEvent>) {
     case "lookup":
       set({ tokenInfo: new Map(state.tokenInfo).set(ev.info.id, ev.info) });
       break;
-    case "done":
+    case "trimmed":
+      if (ev.run === state.run) set({ trimmed: ev.dropped });
+      break;
+    case "done": {
       if (ev.run !== state.run) return;
       flush();
+      // Stopped mid-story: the last token's "next" was picked but never written.
+      const last = state.tokens[state.tokens.length - 1];
+      if (ev.reason === "stopped" && last?.next !== undefined) {
+        const fixed = { ...last, next: undefined, nextProb: undefined };
+        set({ tokens: [...state.tokens.slice(0, -1), fixed] });
+      }
       set({ status: "ready" });
       break;
+    }
     case "error":
       set({ status: "error", error: ev.message });
       break;
@@ -101,7 +113,7 @@ export const zoey = {
     const run = state.run + 1;
     pending = [];
     lensRequested.clear();
-    set({ status: "generating", tokens: [], lens: new Map(), run });
+    set({ status: "generating", tokens: [], lens: new Map(), trimmed: 0, run });
     send({ type: "generate", run, ...opts });
   },
   /** Ask for the layer-by-layer view of one position (cached once computed). */

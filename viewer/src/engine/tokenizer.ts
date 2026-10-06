@@ -4,6 +4,8 @@
  * were learned.
  */
 
+import { printable } from "../lib/format";
+
 export interface TokenizerMeta {
   name: string;
   pattern: string;
@@ -12,7 +14,8 @@ export interface TokenizerMeta {
 }
 
 const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+// ignoreBOM: keep a leading byte-order mark, exactly like Python's decode does.
+const decoder = new TextDecoder("utf-8", { ignoreBOM: true });
 
 export class BPETokenizer {
   readonly eotId: number;
@@ -83,7 +86,7 @@ export class BPETokenizer {
     if (id === this.eotId) return "<eot>";
     const bytes = this.vocabBytes[id];
     try {
-      return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      return printable(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes));
     } catch {
       return `<${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(" ")}>`;
     }

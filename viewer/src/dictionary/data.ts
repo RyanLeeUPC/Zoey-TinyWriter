@@ -12,13 +12,20 @@ let cached: Promise<DictionaryMap> | null = null;
 
 export function useDictionaryMap() {
   const [map, setMap] = useState<DictionaryMap | null>(null);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     cached ??= fetch(`./models/${MODEL_ID}/dictionary.json`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status} loading the word map`);
+        return r.json();
+      })
       .then((d) => ({ xy: Float32Array.from(d.xy), count: d.count }));
-    cached.then(setMap);
+    cached.then(setMap).catch((e) => {
+      cached = null; // try again next time the page opens
+      setError(String(e));
+    });
   }, []);
-  return map;
+  return { map, error };
 }
 
 /** How a token reads as a word: its text without the leading space. */

@@ -67,5 +67,6 @@ export type WorkerEvent =
   | { type: "token"; run: number; trace: TokenTrace }
   | { type: "lens"; run: number; pos: number; lens: Lens }
   | { type: "lookup"; info: TokenInfo }
+  | { type: "trimmed"; run: number; dropped: number }
   | { type: "done"; run: number; reason: "length" | "end" | "stopped" | "full" }
   | { type: "error"; message: string };

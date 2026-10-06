@@ -4,7 +4,7 @@ import { ConfidenceLegend } from "../components/ConfidenceLegend";
 import type { Manifest, Snapshot } from "../lib/types";
 import { useTheme } from "../lib/theme";
 import { bandColor, underline } from "../lib/colors";
-import { nameToken, pct } from "../lib/format";
+import { nameToken, pct, printable } from "../lib/format";
 
 export function SamplesPanel({ manifest, snap }: { manifest: Manifest; snap: Snapshot }) {
   const { theme } = useTheme();
@@ -62,7 +62,7 @@ export function SamplesPanel({ manifest, snap }: { manifest: Manifest; snap: Sna
         <span className="rounded-[3px] bg-accent-wash font-bold text-accent-ink">{sample.prompt}</span>
         {sample.ids.map((id, i) => {
           const t = tokens[id];
-          const text = t === "<eot>" ? " ⏹\n" : t;
+          const text = t === "<eot>" ? " ⏹\n" : printable(t);
           const p = sample.probs[i];
           if (mode === "plain") return <span key={i}>{text}</span>;
           // Keep the leading space outside the underline, so it hugs the word.

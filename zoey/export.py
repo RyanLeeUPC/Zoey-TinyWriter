@@ -22,7 +22,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from .bpe import SPLIT_PATTERN, BPETokenizer
 from .data import build_stream
@@ -31,9 +30,33 @@ from .train import CHECKPOINT_DIR, load_tokenizer
 
 MODELS_DIR = Path(__file__).resolve().parent.parent / "viewer" / "public" / "models"
 
-# The tokenizer's chunking regex, rewritten for JavaScript (which spells
-# "any letter" as \p{L} rather than Python's [^\W\d_]).
-JS_SPLIT_PATTERN = r"""'(?:s|t|re|ve|m|ll|d)| ?\p{L}+| ?\p{N}+| ?(?:[^\s\p{L}\p{N}]|_)+|\s+(?!\S)|\s+"""
+# The tokenizer's chunking regex, rewritten for JavaScript so the browser
+# splits text *exactly* like Python does. The two languages disagree on what
+# counts as a letter, a number, or whitespace, so each class is spelled out:
+#   Python [^\W\d_] (letters) = Unicode letters + letter-like numbers (Ⅳ, ², ½)
+#   Python \d       (digits)  = decimal digits only
+#   Python \s       (spaces)  = str.isspace(), which (unlike JS) includes
+#                               \x1c-\x1f and \x85, and excludes U+FEFF
+_WS = r"\t-\r\x1c-\x20\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000"
+JS_SPLIT_PATTERN = (
+    r"'(?:s|t|re|ve|m|ll|d)"
+    r"| ?[\p{L}\p{Nl}\p{No}]+"
+    r"| ?\p{Nd}+"
+    rf"| ?[^{_WS}\p{{L}}\p{{N}}]+"
+    rf"|[{_WS}]+(?![^{_WS}])"
+    rf"|[{_WS}]+"
+)
+
+# Text that is easy to tokenize differently in Python and JavaScript. The
+# browser engine's tests check every one of these splits identically.
+TOKENIZER_CASES = [
+    "unseen wörds 🐶 and   spaces\n\nOK?",
+    "It's 3 o'clock_now!",
+    "x² 3½ Ⅳ ① ٣",
+    "\ufeffOnce upon a time",
+    "a\x1cb\x85c\u3000d\u00a0e",
+    "under_score __init__ ...!?",
+]
 
 
 def quantize_rows(w: torch.Tensor) -> tuple[np.ndarray, np.ndarray]:
@@ -67,7 +90,9 @@ def main(name: str):
     model = build_model(ckpt["model"], **ckpt["config"]).eval()
     model.load_state_dict(ckpt["state"])
     cfg = model.config
-    tokenizer: BPETokenizer = load_tokenizer("bpe-4096")
+    # The tokenizer the model was trained with (checkpoints saved before this
+    # was recorded all used bpe-4096).
+    tokenizer: BPETokenizer = load_tokenizer(ckpt.get("tokenizer", "bpe-4096"))
     assert tokenizer.vocab_size == cfg.vocab_size
 
     out_dir = MODELS_DIR / name
@@ -138,12 +163,12 @@ def main(name: str):
         "last_logits": logits[0, -1].tolist(),
         "last_attention": views["attention"][:, :, -1, :].tolist(),  # (layers, heads, T)
         "last_lens_top_ids": views["lens_top_ids"][:, -1].tolist(),
-        "tokenizer_cases": {s: tokenizer.encode(s) for s in [prompt, "unseen wörds 🐶 and   spaces\n\nOK?", "It's 3 o'clock_now!"]},
+        "tokenizer_cases": {s: tokenizer.encode(s) for s in [prompt, *TOKENIZER_CASES]},
     }
     ref_dir = Path(__file__).resolve().parent.parent / "viewer" / "test"
     ref_dir.mkdir(exist_ok=True)
     (ref_dir / f"{name}.reference.json").write_text(json.dumps(ref))
-    print(f"Wrote parity reference for the browser engine tests")
+    print("Wrote parity reference for the browser engine tests")
 
 
 def export_dictionary(model, stream, out_dir: Path):

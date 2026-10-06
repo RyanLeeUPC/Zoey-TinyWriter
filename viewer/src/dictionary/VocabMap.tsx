@@ -36,7 +36,11 @@ export function VocabMap({
   const [size, setSize] = useState({ w: 600, h: 420 });
   const [view, setView] = useState<View>(HOME);
   const [hover, setHover] = useState<{ id: number; x: number; y: number } | null>(null);
-  const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
+  // Every finger (or the mouse) currently pressed on the map, and the gesture they make.
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const gesture = useRef<{ view: View; start: Map<number, { x: number; y: number }>; moved: boolean; multi: boolean } | null>(null);
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   // Word tokens, most common first: the ones that get labels.
   const labelOrder = useMemo(
@@ -184,7 +188,63 @@ export function VocabMap({
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
-  const zoomBy = (f: number) => setView((vw) => ({ ...vw, zoom: Math.min(40, Math.max(0.8, vw.zoom * f)) }));
+  const clampZoom = (z: number) => Math.min(40, Math.max(0.8, z));
+
+  /** (Re)start the gesture from the current view, e.g. when a finger is added or lifted. */
+  const restartGesture = (keep?: { moved: boolean; multi: boolean }) => {
+    gesture.current = {
+      view: viewRef.current,
+      start: new Map(pointers.current),
+      moved: keep?.moved ?? false,
+      multi: (keep?.multi ?? false) || pointers.current.size > 1,
+    };
+  };
+
+  /** One finger pans; two fingers pan and pinch-zoom around their midpoint. */
+  const applyGesture = () => {
+    const g = gesture.current;
+    if (!g) return;
+    const ids = [...pointers.current.keys()].filter((id) => g.start.has(id));
+    if (!ids.length) return;
+    const now = ids.map((id) => pointers.current.get(id)!);
+    const was = ids.map((id) => g.start.get(id)!);
+    const mid = (pts: { x: number; y: number }[]) => ({
+      x: pts.reduce((a, p) => a + p.x, 0) / pts.length,
+      y: pts.reduce((a, p) => a + p.y, 0) / pts.length,
+    });
+    const m0 = mid(was);
+    const m1 = mid(now);
+    let zoom = g.view.zoom;
+    if (now.length >= 2) {
+      const d0 = Math.hypot(was[0].x - was[1].x, was[0].y - was[1].y) || 1;
+      const d1 = Math.hypot(now[0].x - now[1].x, now[0].y - now[1].y);
+      zoom = clampZoom(g.view.zoom * (d1 / d0));
+    }
+    if (Math.abs(m1.x - m0.x) + Math.abs(m1.y - m0.y) > 3 || zoom !== g.view.zoom) g.moved = true;
+    // Keep the map point that was under the fingers' midpoint under it now.
+    const wx = g.view.cx + (m0.x - size.w / 2) / (base * g.view.zoom);
+    const wy = g.view.cy + (m0.y - size.h / 2) / (base * g.view.zoom);
+    setView({ zoom, cx: wx - (m1.x - size.w / 2) / (base * zoom), cy: wy - (m1.y - size.h / 2) / (base * zoom) });
+  };
+
+  const release = (e: React.PointerEvent, tap: boolean) => {
+    pointers.current.delete(e.pointerId);
+    const g = gesture.current;
+    if (pointers.current.size > 0) {
+      // A finger lifted mid-gesture: carry on smoothly with the ones left.
+      restartGesture(g ? { moved: g.moved, multi: g.multi } : undefined);
+      return;
+    }
+    gesture.current = null;
+    // Only a quick single-finger tap (or click) opens a word.
+    if (tap && g && !g.moved && !g.multi) {
+      const p = local(e);
+      const id = nearest(p.x, p.y);
+      if (id >= 0) onPick(id);
+    }
+  };
+
+  const zoomBy = (f: number) => setView((vw) => ({ ...vw, zoom: clampZoom(vw.zoom * f) }));
 
   return (
     <div ref={wrapRef} className="relative w-full overflow-hidden rounded-xl border border-line">
@@ -193,32 +253,28 @@ export function VocabMap({
         style={{ width: "100%", height: size.h, touchAction: "none", display: "block" }}
         className={hover ? "cursor-pointer" : "cursor-grab"}
         onPointerDown={(e) => {
-          drag.current = { ...local(e), view, moved: false };
-          (e.target as HTMLElement).setPointerCapture(e.pointerId);
+          pointers.current.set(e.pointerId, local(e));
+          try {
+            (e.target as HTMLElement).setPointerCapture(e.pointerId);
+          } catch {
+            // some pointers (e.g. synthetic ones) can't be captured; the gesture still works
+          }
+          const g = gesture.current;
+          restartGesture(g ? { moved: g.moved, multi: true } : undefined);
+          setHover(null);
         }}
         onPointerMove={(e) => {
           const p = local(e);
-          if (drag.current) {
-            const dx = p.x - drag.current.x;
-            const dy = p.y - drag.current.y;
-            if (Math.abs(dx) + Math.abs(dy) > 3) drag.current.moved = true;
-            const k = base * drag.current.view.zoom;
-            setView({ ...drag.current.view, cx: drag.current.view.cx - dx / k, cy: drag.current.view.cy - dy / k });
-            setHover(null);
-          } else {
+          if (pointers.current.has(e.pointerId)) {
+            pointers.current.set(e.pointerId, p);
+            applyGesture();
+          } else if (e.pointerType === "mouse") {
             const id = nearest(p.x, p.y);
             setHover(id >= 0 ? { id, ...p } : null);
           }
         }}
-        onPointerUp={(e) => {
-          const wasDrag = drag.current?.moved;
-          drag.current = null;
-          if (!wasDrag) {
-            const p = local(e);
-            const id = nearest(p.x, p.y);
-            if (id >= 0) onPick(id);
-          }
-        }}
+        onPointerUp={(e) => release(e, true)}
+        onPointerCancel={(e) => release(e, false)}
         onPointerLeave={() => setHover(null)}
       />
       {hover && (

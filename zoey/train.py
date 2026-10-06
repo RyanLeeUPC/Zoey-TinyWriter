@@ -95,11 +95,12 @@ def estimate_loss(model, stream, cfg: dict, device: str, autocast) -> dict:
     return out
 
 
-def save_checkpoint(path: Path, model, model_name: str, step: int, optimizer=None):
+def save_checkpoint(path: Path, model, model_name: str, tokenizer_name: str, step: int, optimizer=None):
     path.parent.mkdir(exist_ok=True)
     torch.save(
         {
             "model": model_name,
+            "tokenizer": tokenizer_name,  # so export packages the matching tokenizer
             "config": model.config.__dict__,
             "state": model.state_dict(),
             "step": step,
@@ -194,12 +195,12 @@ def main(config_path: str):
             last_print, last_step = now, step
 
         if save_every and step and step % save_every == 0:
-            save_checkpoint(ckpt_path, model, model_name, step, optimizer)
+            save_checkpoint(ckpt_path, model, model_name, data_cfg["tokenizer"], step, optimizer)
 
     trace.manifest["train"]["seconds"] = round(time.time() - started, 1)
     trace.manifest["train"]["device"] = torch.cuda.get_device_name() if device == "cuda" else device
     trace.save_manifest()
-    save_checkpoint(ckpt_path, model, model_name, max_steps)
+    save_checkpoint(ckpt_path, model, model_name, data_cfg["tokenizer"], max_steps)
     print(f"Done in {(time.time() - started) / 60:.1f} min. Trace written to {trace.dir}")
 
 

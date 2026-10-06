@@ -16,7 +16,7 @@ const QUICK_PICKS = [" dog", " happy", " red", " Lily", " ran", " three", " cake
 
 export function Dictionary() {
   const z = useZoey();
-  const map = useDictionaryMap();
+  const { map, error: mapError } = useDictionaryMap();
   const navigate = useNavigate();
   const { tokenId } = useParams();
   const [compareId, setCompareId] = useState<number | null>(null);
@@ -66,10 +66,10 @@ export function Dictionary() {
         </p>
       </section>
 
-      {z.status === "error" ? (
+      {z.status === "error" || mapError ? (
         <div className="rounded-2xl border border-bad/40 bg-surface p-6">
-          <p className="font-semibold">TinyWriter couldn't start.</p>
-          <p className="mt-1 text-sm text-ink-2">{z.error}</p>
+          <p className="font-semibold">TinyWriter's dictionary couldn't open.</p>
+          <p className="mt-1 text-sm text-ink-2">{z.error ?? mapError}. Reloading the page usually fixes it.</p>
         </div>
       ) : !ready || selected === null ? (
         <div className="mx-auto max-w-md rounded-2xl border border-line bg-surface p-8 text-center shadow-sm">

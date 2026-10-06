@@ -3,7 +3,16 @@ export function showToken(t: string): string {
   if (t === " ") return "␣";
   if (t === "\n") return "↵";
   if (t === "<eot>") return "⏹";
-  return t;
+  return printable(t);
+}
+
+/**
+ * Invisible control characters (which an untrained model happily produces)
+ * shown as their byte code, like <03>, matching how partial characters appear.
+ * Newlines and tabs are left alone.
+ */
+export function printable(text: string): string {
+  return text.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, (c) => `<${c.charCodeAt(0).toString(16).padStart(2, "0")}>`);
 }
 
 /** Plain-English name for a token, for tooltips and sentences. */

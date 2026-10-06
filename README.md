@@ -2,6 +2,8 @@
 
 **A glass-box language model. Watch it think.**
 
+[![Meet TinyWriter. Look inside.](viewer/public/social.png)](https://ryanleeupc.github.io/Zoey-TinyWriter/)
+
 TinyWriter is a small language model (27.5M parameters) that writes children's stories. It works like the AI chatbots you know, just thousands of times smaller, so you can see every step. It runs entirely in your browser, and you can click any word it writes to look inside:
 
 - **What it expected next**: its top guesses, with probabilities
@@ -79,7 +81,7 @@ Zoey-TinyWriter builds on great work by others. If you like it, go check these o
 - Sebastian Raschka's [*Build a Large Language Model (From Scratch)*](https://github.com/rasbt/LLMs-from-scratch)
 - [Transformer Explainer](https://poloclub.github.io/transformer-explainer/) (Georgia Tech Polo Club) and Brendan Bycroft's [LLM Visualization](https://bbycroft.net/llm)
 - [TransformerLens](https://github.com/TransformerLensOrg/TransformerLens) and Anthropic's [Transformer Circuits](https://transformer-circuits.pub/) research on what happens inside transformers
-- The [TinyStories](https://arxiv.org/abs/2305.07759) dataset by Ronen Eldan & Yuanzhi Li
+- The [TinyStories](https://arxiv.org/abs/2305.07759) dataset by Ronen Eldan & Yuanzhi Li ([CDLA-Sharing-1.0](https://huggingface.co/datasets/roneneldan/TinyStories)). It isn't included in this repo; the training scripts download it from Hugging Face.
 
 ## License
 
